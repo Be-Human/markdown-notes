@@ -46,21 +46,87 @@ class MarkdownNotesApp {
         
         let html = text;
         
-        // 处理代码块 (```...```)
+        // 先处理代码块，避免其中的内容被其他规则解析
+        // 使用特殊标记替换代码块，最后再替换回来
+        const codeBlocks = [];
         html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
-            return `<pre><code>${this.escapeHtml(code.trim())}</code></pre>`;
+            codeBlocks.push(`<pre><code>${this.escapeHtml(code.trim())}</code></pre>`);
+            return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
         });
+        
+        // 分割为段落（以空行分隔）
+        const blocks = html.split(/\n\n+/);
+        const result = [];
+        
+        for (let block of blocks) {
+            block = block.trim();
+            if (!block) continue;
+            
+            // 检查是否是引用块（以 > 开头）
+            if (block.startsWith('>')) {
+                const quoteContent = block.split('\n').map(line => {
+                    return line.replace(/^>\s?/, '');
+                }).join('\n');
+                // 递归解析引用块内的内容
+                result.push(`<blockquote>${this.parseInlineMarkdown(quoteContent)}</blockquote>`);
+                continue;
+            }
+            
+            // 检查是否是有序列表
+            if (/^\d+\.\s/.test(block)) {
+                const items = block.split('\n').filter(line => /^\d+\.\s/.test(line));
+                const listItems = items.map(item => {
+                    return `<li>${this.parseInlineMarkdown(item.replace(/^\d+\.\s+/, ''))}</li>`;
+                }).join('');
+                result.push(`<ol>${listItems}</ol>`);
+                continue;
+            }
+            
+            // 检查是否是无序列表
+            if (/^[\*\+\-]\s/.test(block)) {
+                const items = block.split('\n').filter(line => /^[\*\+\-]\s/.test(line));
+                const listItems = items.map(item => {
+                    return `<li>${this.parseInlineMarkdown(item.replace(/^[\*\+\-]\s+/, ''))}</li>`;
+                }).join('');
+                result.push(`<ul>${listItems}</ul>`);
+                continue;
+            }
+            
+            // 检查是否是标题
+            if (/^#{1,6}\s/.test(block)) {
+                const level = block.match(/^(#+)/)[1].length;
+                const content = block.replace(/^#{1,6}\s/, '');
+                result.push(`<h${level}>${this.parseInlineMarkdown(content)}</h${level}>`);
+                continue;
+            }
+            
+            // 检查是否是分割线
+            if (/^(\*{3,}|-{3,}|_{3,})$/.test(block)) {
+                result.push('<hr>');
+                continue;
+            }
+            
+            // 普通段落
+            result.push(`<p>${this.parseInlineMarkdown(block)}</p>`);
+        }
+        
+        // 替换回代码块
+        let finalHtml = result.join('');
+        for (let i = 0; i < codeBlocks.length; i++) {
+            finalHtml = finalHtml.replace(`__CODE_BLOCK_${i}__`, codeBlocks[i]);
+        }
+        
+        return finalHtml;
+    }
+    
+    // 解析行内 Markdown 语法
+    parseInlineMarkdown(text) {
+        if (!text) return '';
+        
+        let html = text;
         
         // 处理行内代码 (`...`)
         html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-        
-        // 处理标题 (# 到 ######)
-        html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
-        html = html.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
-        html = html.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
-        html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-        html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-        html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
         
         // 处理粗体 (**...**)
         html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -71,40 +137,8 @@ class MarkdownNotesApp {
         // 处理链接 ([text](url))
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
         
-        // 处理分割线 (---, ***, ___)
-        html = html.replace(/^\*{3,}$/gm, '<hr>');
-        html = html.replace(/^-{3,}$/gm, '<hr>');
-        html = html.replace(/^_{3,}$/gm, '<hr>');
-        
-        // 处理有序列表 (1. 2. 3.)
-        // 需要特殊处理，因为列表项可能跨多行
-        const orderedListRegex = /^\d+\.\s+[\s\S]*?(?=\n\n|\n$|$)/gm;
-        html = html.replace(orderedListRegex, (match) => {
-            const items = match.split('\n').filter(item => item.trim() !== '');
-            const listItems = items.map(item => {
-                return `<li>${item.replace(/^\d+\.\s+/, '')}</li>`;
-            }).join('');
-            return `<ol>${listItems}</ol>`;
-        });
-        
-        // 处理无序列表 (- *, +)
-        const unorderedListRegex = /^[\*\+\-]\s+[\s\S]*?(?=\n\n|\n$|$)/gm;
-        html = html.replace(unorderedListRegex, (match) => {
-            const items = match.split('\n').filter(item => item.trim() !== '');
-            const listItems = items.map(item => {
-                return `<li>${item.replace(/^[\*\+\-]\s+/, '')}</li>`;
-            }).join('');
-            return `<ul>${listItems}</ul>`;
-        });
-        
-        // 处理段落 (剩余的文本)
-        // 先处理换行，将单个换行替换为 <br>，然后将多个换行替换为段落分隔
-        html = html.split('\n\n').map(paragraph => {
-            if (paragraph.startsWith('<') && paragraph.endsWith('>')) {
-                return paragraph; // 已经是 HTML 元素
-            }
-            return `<p>${paragraph.replace(/\n/g, '<br>')}</p>`;
-        }).join('');
+        // 处理换行（单个换行）
+        html = html.replace(/\n/g, '<br>');
         
         return html;
     }
