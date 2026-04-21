@@ -8,6 +8,15 @@ class MarkdownNotesApp {
         this.notesList = document.getElementById('notes-list');
         this.newNoteBtn = document.getElementById('new-note-btn');
         
+        // 确认对话框相关元素
+        this.confirmDialogOverlay = document.getElementById('confirm-dialog-overlay');
+        this.confirmDialogTitle = document.getElementById('confirm-dialog-title');
+        this.confirmDialogMessage = document.getElementById('confirm-dialog-message');
+        this.confirmDialogCancel = document.getElementById('confirm-dialog-cancel');
+        this.confirmDialogConfirm = document.getElementById('confirm-dialog-confirm');
+        
+        this.confirmCallback = null;
+        
         this.init();
     }
 
@@ -38,6 +47,46 @@ class MarkdownNotesApp {
         this.newNoteBtn.addEventListener('click', () => {
             this.createNewNote();
         });
+
+        // 确认对话框按钮事件
+        this.confirmDialogCancel.addEventListener('click', () => {
+            this.hideConfirmDialog();
+        });
+
+        this.confirmDialogConfirm.addEventListener('click', () => {
+            if (this.confirmCallback) {
+                this.confirmCallback();
+            }
+            this.hideConfirmDialog();
+        });
+
+        // 点击遮罩层关闭对话框
+        this.confirmDialogOverlay.addEventListener('click', (e) => {
+            if (e.target === this.confirmDialogOverlay) {
+                this.hideConfirmDialog();
+            }
+        });
+
+        // ESC 键关闭对话框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.confirmDialogOverlay.classList.contains('active')) {
+                this.hideConfirmDialog();
+            }
+        });
+    }
+
+    // 显示确认对话框
+    showConfirmDialog(title, message, callback) {
+        this.confirmDialogTitle.textContent = title;
+        this.confirmDialogMessage.textContent = message;
+        this.confirmCallback = callback;
+        this.confirmDialogOverlay.classList.add('active');
+    }
+
+    // 隐藏确认对话框
+    hideConfirmDialog() {
+        this.confirmDialogOverlay.classList.remove('active');
+        this.confirmCallback = null;
     }
 
     // Markdown 解析函数
@@ -169,6 +218,36 @@ class MarkdownNotesApp {
         localStorage.setItem('markdownNotes', JSON.stringify(this.notes));
     }
 
+    // 格式化时间
+    formatTime(isoString) {
+        if (!isoString) return '';
+        
+        const date = new Date(isoString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+        
+        if (diffSecs < 60) {
+            return '刚刚';
+        } else if (diffMins < 60) {
+            return `${diffMins} 分钟前`;
+        } else if (diffHours < 24) {
+            return `${diffHours} 小时前`;
+        } else if (diffDays < 7) {
+            return `${diffDays} 天前`;
+        } else {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const mins = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${mins}`;
+        }
+    }
+
     // 渲染笔记列表
     renderNotesList() {
         this.notesList.innerHTML = '';
@@ -182,9 +261,19 @@ class MarkdownNotesApp {
             noteItem.className = `note-item${note.id === this.currentNoteId ? ' active' : ''}`;
             noteItem.dataset.id = note.id;
             
-            const noteTitle = document.createElement('span');
+            const noteInfo = document.createElement('div');
+            noteInfo.className = 'note-info';
+            
+            const noteTitle = document.createElement('div');
             noteTitle.className = 'note-title';
             noteTitle.textContent = this.getNoteTitle(note.content);
+            
+            const noteTime = document.createElement('div');
+            noteTime.className = 'note-time';
+            noteTime.textContent = this.formatTime(note.updatedAt);
+            
+            noteInfo.appendChild(noteTitle);
+            noteInfo.appendChild(noteTime);
             
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'note-delete-btn';
@@ -204,7 +293,7 @@ class MarkdownNotesApp {
                 this.deleteNote(note.id);
             });
             
-            noteItem.appendChild(noteTitle);
+            noteItem.appendChild(noteInfo);
             noteItem.appendChild(deleteBtn);
             this.notesList.appendChild(noteItem);
         });
@@ -268,11 +357,11 @@ class MarkdownNotesApp {
     deleteNote(noteId) {
         if (this.notes.length <= 1) {
             // 至少保留一个笔记
-            alert('至少需要保留一个笔记！');
+            this.showConfirmDialog('提示', '至少需要保留一个笔记！', null);
             return;
         }
         
-        if (confirm('确定要删除这个笔记吗？')) {
+        this.showConfirmDialog('删除笔记', '确定要删除这个笔记吗？', () => {
             const noteIndex = this.notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
                 this.notes.splice(noteIndex, 1);
@@ -285,7 +374,7 @@ class MarkdownNotesApp {
                     this.renderNotesList();
                 }
             }
-        }
+        });
     }
 }
 
