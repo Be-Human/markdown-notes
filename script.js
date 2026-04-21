@@ -8,6 +8,9 @@ class MarkdownNotesApp {
         this.notesList = document.getElementById('notes-list');
         this.newNoteBtn = document.getElementById('new-note-btn');
         
+        // 格式工具栏按钮
+        this.formatButtons = document.querySelectorAll('.format-btn');
+        
         // 确认对话框相关元素
         this.confirmDialogOverlay = document.getElementById('confirm-dialog-overlay');
         this.confirmDialogTitle = document.getElementById('confirm-dialog-title');
@@ -54,6 +57,28 @@ class MarkdownNotesApp {
             this.createNewNote();
         });
 
+        // 格式工具栏按钮事件
+        this.formatButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const action = btn.dataset.action;
+                this.handleFormatAction(action);
+            });
+        });
+
+        // 键盘快捷键
+        this.editor.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'b' || e.key === 'B') {
+                    e.preventDefault();
+                    this.handleFormatAction('bold');
+                } else if (e.key === 'i' || e.key === 'I') {
+                    e.preventDefault();
+                    this.handleFormatAction('italic');
+                }
+            }
+        });
+
         // 确认对话框按钮事件
         this.confirmDialogCancel.addEventListener('click', () => {
             this.hideConfirmDialog();
@@ -98,6 +123,116 @@ class MarkdownNotesApp {
                 this.hideAlertDialog();
             }
         });
+    }
+
+    // 处理格式操作
+    handleFormatAction(action) {
+        const editor = this.editor;
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const text = editor.value;
+        const selectedText = text.substring(start, end);
+        
+        let newText = '';
+        let newCursorPos = start;
+        
+        switch (action) {
+            case 'bold':
+                if (selectedText) {
+                    newText = text.substring(0, start) + '**' + selectedText + '**' + text.substring(end);
+                    newCursorPos = end + 4;
+                } else {
+                    newText = text.substring(0, start) + '****' + text.substring(end);
+                    newCursorPos = start + 2;
+                }
+                break;
+                
+            case 'italic':
+                if (selectedText) {
+                    newText = text.substring(0, start) + '*' + selectedText + '*' + text.substring(end);
+                    newCursorPos = end + 2;
+                } else {
+                    newText = text.substring(0, start) + '**' + text.substring(end);
+                    newCursorPos = start + 1;
+                }
+                break;
+                
+            case 'inline-code':
+                if (selectedText) {
+                    newText = text.substring(0, start) + '`' + selectedText + '`' + text.substring(end);
+                    newCursorPos = end + 2;
+                } else {
+                    newText = text.substring(0, start) + '``' + text.substring(end);
+                    newCursorPos = start + 1;
+                }
+                break;
+                
+            case 'h1':
+                newText = this.insertLinePrefix(text, start, end, '# ');
+                newCursorPos = start + 2;
+                break;
+                
+            case 'h2':
+                newText = this.insertLinePrefix(text, start, end, '## ');
+                newCursorPos = start + 3;
+                break;
+                
+            case 'h3':
+                newText = this.insertLinePrefix(text, start, end, '### ');
+                newCursorPos = start + 4;
+                break;
+                
+            case 'ul':
+                newText = this.insertLinePrefix(text, start, end, '- ');
+                newCursorPos = start + 2;
+                break;
+                
+            case 'ol':
+                newText = this.insertLinePrefix(text, start, end, '1. ');
+                newCursorPos = start + 3;
+                break;
+                
+            case 'quote':
+                newText = this.insertLinePrefix(text, start, end, '> ');
+                newCursorPos = start + 2;
+                break;
+        }
+        
+        if (newText) {
+            editor.value = newText;
+            editor.selectionStart = newCursorPos;
+            editor.selectionEnd = newCursorPos;
+            editor.focus();
+            this.updateCurrentNote();
+            this.renderPreview();
+        }
+    }
+
+    // 在当前行开头插入前缀
+    insertLinePrefix(text, start, end, prefix) {
+        const lines = text.split('\n');
+        let currentLine = 0;
+        let charCount = 0;
+        
+        for (let i = 0; i < lines.length; i++) {
+            const lineLength = lines[i].length + 1;
+            if (charCount + lineLength > start) {
+                currentLine = i;
+                break;
+            }
+            charCount += lineLength;
+        }
+        
+        const lineStart = charCount;
+        const currentLineText = lines[currentLine];
+        
+        if (!currentLineText.startsWith(prefix)) {
+            lines[currentLine] = prefix + currentLineText;
+        } else {
+            lines[currentLine] = currentLineText.substring(prefix.length);
+        }
+        
+        return lines.join('\n');
     }
 
     // 显示确认对话框
