@@ -15,6 +15,12 @@ class MarkdownNotesApp {
         this.confirmDialogCancel = document.getElementById('confirm-dialog-cancel');
         this.confirmDialogConfirm = document.getElementById('confirm-dialog-confirm');
         
+        // 提示对话框相关元素
+        this.alertDialogOverlay = document.getElementById('alert-dialog-overlay');
+        this.alertDialogTitle = document.getElementById('alert-dialog-title');
+        this.alertDialogMessage = document.getElementById('alert-dialog-message');
+        this.alertDialogOk = document.getElementById('alert-dialog-ok');
+        
         this.confirmCallback = null;
         
         this.init();
@@ -67,10 +73,29 @@ class MarkdownNotesApp {
             }
         });
 
-        // ESC 键关闭对话框
+        // ESC 键关闭确认对话框
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.confirmDialogOverlay.classList.contains('active')) {
                 this.hideConfirmDialog();
+            }
+        });
+
+        // 提示对话框按钮事件
+        this.alertDialogOk.addEventListener('click', () => {
+            this.hideAlertDialog();
+        });
+
+        // 点击遮罩层关闭提示对话框
+        this.alertDialogOverlay.addEventListener('click', (e) => {
+            if (e.target === this.alertDialogOverlay) {
+                this.hideAlertDialog();
+            }
+        });
+
+        // ESC 键关闭提示对话框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.alertDialogOverlay.classList.contains('active')) {
+                this.hideAlertDialog();
             }
         });
     }
@@ -87,6 +112,18 @@ class MarkdownNotesApp {
     hideConfirmDialog() {
         this.confirmDialogOverlay.classList.remove('active');
         this.confirmCallback = null;
+    }
+
+    // 显示提示对话框
+    showAlertDialog(title, message) {
+        this.alertDialogTitle.textContent = title;
+        this.alertDialogMessage.textContent = message;
+        this.alertDialogOverlay.classList.add('active');
+    }
+
+    // 隐藏提示对话框
+    hideAlertDialog() {
+        this.alertDialogOverlay.classList.remove('active');
     }
 
     // Markdown 解析函数
@@ -272,8 +309,15 @@ class MarkdownNotesApp {
             noteTime.className = 'note-time';
             noteTime.textContent = this.formatTime(note.updatedAt);
             
+            const noteSummary = document.createElement('div');
+            noteSummary.className = 'note-summary';
+            noteSummary.textContent = this.getNoteSummary(note.content);
+            
             noteInfo.appendChild(noteTitle);
             noteInfo.appendChild(noteTime);
+            if (noteSummary.textContent) {
+                noteInfo.appendChild(noteSummary);
+            }
             
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'note-delete-btn';
@@ -310,6 +354,46 @@ class MarkdownNotesApp {
         
         // 移除 Markdown 标题标记
         return firstLine.replace(/^#+\s*/, '');
+    }
+
+    // 获取笔记内容摘要
+    getNoteSummary(content) {
+        if (!content || content.trim() === '') {
+            return '';
+        }
+        
+        // 移除 Markdown 标题标记
+        let summary = content.replace(/^#+\s*/gm, '');
+        
+        // 移除代码块
+        summary = summary.replace(/```[\s\S]*?```/g, '');
+        
+        // 移除行内代码
+        summary = summary.replace(/`[^`]+`/g, '');
+        
+        // 移除 Markdown 语法标记
+        summary = summary.replace(/\*\*([^*]+)\*\*/g, '$1'); // 粗体
+        summary = summary.replace(/\*([^*]+)\*/g, '$1'); // 斜体
+        summary = summary.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // 链接
+        summary = summary.replace(/^>\s?/gm, ''); // 引用
+        summary = summary.replace(/^[\*\+\-]\s/gm, ''); // 无序列表
+        summary = summary.replace(/^\d+\.\s/gm, ''); // 有序列表
+        
+        // 移除空行
+        summary = summary.replace(/\n\n+/g, '\n');
+        
+        // 移除单个换行
+        summary = summary.replace(/\n/g, ' ');
+        
+        // 移除多余空格
+        summary = summary.replace(/\s+/g, ' ').trim();
+        
+        // 截取前 50 个字符
+        if (summary.length > 50) {
+            summary = summary.substring(0, 50) + '...';
+        }
+        
+        return summary;
     }
 
     // 创建新笔记
@@ -357,7 +441,7 @@ class MarkdownNotesApp {
     deleteNote(noteId) {
         if (this.notes.length <= 1) {
             // 至少保留一个笔记
-            this.showConfirmDialog('提示', '至少需要保留一个笔记！', null);
+            this.showAlertDialog('提示', '至少需要保留一个笔记！');
             return;
         }
         
