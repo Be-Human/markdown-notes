@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 笔记应用</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>笔记</h1>
+                <button id="new-note-btn" class="btn btn-primary">新建笔记</button>
+            </div>
+            <div class="notes-list" id="notes-list">
+                <!-- 笔记列表将在这里动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 编辑区 -->
+            <div class="editor-container">
+                <div class="editor-header">
+                    <h2>编辑</h2>
+                </div>
+                <textarea id="editor" placeholder="开始输入 Markdown 内容..."></textarea>
+            </div>
+            
+            <!-- 预览区 -->
+            <div class="preview-container">
+                <div class="preview-header">
+                    <h2>预览</h2>
+                </div>
+                <div id="preview" class="preview-content">
+                    <!-- 预览内容将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
