@@ -238,6 +238,17 @@ body {
     font-style: italic;
 }
 
+.format-btn .code-icon {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.95rem;
+    letter-spacing: -0.5px;
+    color: #ce9178;
+}
+
+.format-btn:hover .code-icon {
+    color: #ffffff;
+}
+
 .toolbar-divider {
     width: 1px;
     height: 20px;

@@ -208,28 +208,59 @@ class MarkdownNotesApp {
         }
     }
 
-    // 在当前行开头插入前缀
+    // 在选中的行开头插入前缀
     insertLinePrefix(text, start, end, prefix) {
         const lines = text.split('\n');
-        let currentLine = 0;
+        let startLine = 0;
+        let endLine = 0;
         let charCount = 0;
         
+        // 找到起始行
         for (let i = 0; i < lines.length; i++) {
             const lineLength = lines[i].length + 1;
             if (charCount + lineLength > start) {
-                currentLine = i;
+                startLine = i;
                 break;
             }
             charCount += lineLength;
         }
         
-        const lineStart = charCount;
-        const currentLineText = lines[currentLine];
+        // 找到结束行
+        charCount = 0;
+        for (let i = 0; i < lines.length; i++) {
+            const lineLength = lines[i].length + 1;
+            if (charCount + lineLength > end) {
+                endLine = i;
+                break;
+            }
+            charCount += lineLength;
+        }
         
-        if (!currentLineText.startsWith(prefix)) {
-            lines[currentLine] = prefix + currentLineText;
-        } else {
-            lines[currentLine] = currentLineText.substring(prefix.length);
+        // 如果光标在文本末尾，结束行就是最后一行
+        if (end === text.length) {
+            endLine = lines.length - 1;
+        }
+        
+        // 检查所有选中行是否都已经有前缀
+        let allHavePrefix = true;
+        for (let i = startLine; i <= endLine; i++) {
+            if (lines[i] && !lines[i].startsWith(prefix)) {
+                allHavePrefix = false;
+                break;
+            }
+        }
+        
+        // 对选中的每一行进行处理
+        for (let i = startLine; i <= endLine; i++) {
+            if (allHavePrefix) {
+                // 移除前缀
+                if (lines[i] && lines[i].startsWith(prefix)) {
+                    lines[i] = lines[i].substring(prefix.length);
+                }
+            } else {
+                // 添加前缀
+                lines[i] = prefix + lines[i];
+            }
         }
         
         return lines.join('\n');
