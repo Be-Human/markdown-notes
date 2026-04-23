@@ -3,10 +3,13 @@ class MarkdownNotesApp {
     constructor() {
         this.notes = [];
         this.currentNoteId = null;
+        this.searchKeyword = '';
         this.editor = document.getElementById('editor');
         this.preview = document.getElementById('preview');
         this.notesList = document.getElementById('notes-list');
         this.newNoteBtn = document.getElementById('new-note-btn');
+        this.searchInput = document.getElementById('search-input');
+        this.noResults = document.getElementById('no-results');
         
         // 格式工具栏按钮
         this.formatButtons = document.querySelectorAll('.format-btn');
@@ -55,6 +58,12 @@ class MarkdownNotesApp {
         // 新建笔记按钮
         this.newNoteBtn.addEventListener('click', () => {
             this.createNewNote();
+        });
+
+        // 搜索框事件
+        this.searchInput.addEventListener('input', () => {
+            this.searchKeyword = this.searchInput.value.trim().toLowerCase();
+            this.renderNotesList();
         });
 
         // 格式工具栏按钮事件
@@ -456,10 +465,20 @@ class MarkdownNotesApp {
         this.notesList.innerHTML = '';
         
         if (this.notes.length === 0) {
+            this.showNoResults(false);
             return;
         }
+
+        const filteredNotes = this.getFilteredNotes();
         
-        this.notes.forEach(note => {
+        if (filteredNotes.length === 0) {
+            this.showNoResults(true);
+            return;
+        }
+
+        this.showNoResults(false);
+        
+        filteredNotes.forEach(note => {
             const noteItem = document.createElement('div');
             noteItem.className = `note-item${note.id === this.currentNoteId ? ' active' : ''}`;
             noteItem.dataset.id = note.id;
@@ -490,14 +509,12 @@ class MarkdownNotesApp {
             deleteBtn.textContent = '×';
             deleteBtn.title = '删除笔记';
             
-            // 点击笔记项加载笔记
             noteItem.addEventListener('click', (e) => {
                 if (e.target !== deleteBtn) {
                     this.loadNote(note.id);
                 }
             });
             
-            // 点击删除按钮删除笔记
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.deleteNote(note.id);
@@ -507,6 +524,26 @@ class MarkdownNotesApp {
             noteItem.appendChild(deleteBtn);
             this.notesList.appendChild(noteItem);
         });
+    }
+
+    // 获取过滤后的笔记列表
+    getFilteredNotes() {
+        if (!this.searchKeyword) {
+            return this.notes;
+        }
+        
+        return this.notes.filter(note => {
+            const title = this.getNoteTitle(note.content).toLowerCase();
+            const content = note.content.toLowerCase();
+            return title.includes(this.searchKeyword) || content.includes(this.searchKeyword);
+        });
+    }
+
+    // 显示/隐藏无结果提示
+    showNoResults(show) {
+        if (this.noResults) {
+            this.noResults.style.display = show ? 'block' : 'none';
+        }
     }
 
     // 获取笔记标题（从内容第一行）

@@ -14,8 +14,13 @@
                 <h1>笔记</h1>
                 <button id="new-note-btn" class="btn btn-primary">新建笔记</button>
             </div>
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="搜索笔记...">
+            </div>
             <div class="notes-list" id="notes-list">
-                <!-- 笔记列表将在这里动态生成 -->
+                <div class="no-results" id="no-results" style="display: none;">
+                    <p>没有找到匹配的笔记</p>
+                </div>
             </div>
         </div>
         
