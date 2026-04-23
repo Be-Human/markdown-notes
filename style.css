@@ -44,6 +44,43 @@ body {
     color: #ffffff;
 }
 
+/* 搜索框样式 */
+.search-container {
+    padding: 12px 16px;
+    border-bottom: 1px solid #3c3c3c;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: #3c3c3c;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    color: #d4d4d4;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.search-input::placeholder {
+    color: #808080;
+}
+
+.search-input:focus {
+    border-color: #007acc;
+}
+
+/* 无结果提示样式 */
+.no-results {
+    padding: 24px 16px;
+    text-align: center;
+    color: #808080;
+}
+
+.no-results p {
+    font-size: 0.9rem;
+}
+
 /* 按钮样式 */
 .btn {
     padding: 8px 16px;
