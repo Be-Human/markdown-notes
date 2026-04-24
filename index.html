@@ -12,7 +12,12 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <h1>笔记</h1>
-                <button id="new-note-btn" class="btn btn-primary">新建笔记</button>
+                <div class="sidebar-actions">
+                    <button id="new-note-btn" class="btn btn-primary" title="新建笔记 (Ctrl+N)">新建笔记</button>
+                    <button id="keyboard-shortcuts-btn" class="btn btn-secondary" title="键盘快捷键 (Ctrl+/)">
+                        <span class="icon">⌨</span>
+                    </button>
+                </div>
             </div>
             <div class="search-container">
                 <input type="text" id="search-input" class="search-input" placeholder="搜索笔记...">
@@ -105,6 +110,60 @@
             </div>
             <div class="alert-dialog-footer">
                 <button id="alert-dialog-ok" class="btn btn-primary">知道了</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 快捷键参考对话框 -->
+    <div class="shortcuts-dialog-overlay" id="shortcuts-dialog-overlay">
+        <div class="shortcuts-dialog">
+            <div class="shortcuts-dialog-header">
+                <h3 id="shortcuts-dialog-title">键盘快捷键</h3>
+                <button id="shortcuts-dialog-close" class="dialog-close-btn" title="关闭">×</button>
+            </div>
+            <div class="shortcuts-dialog-content">
+                <div class="shortcuts-section">
+                    <h4>常用操作</h4>
+                    <div class="shortcuts-list">
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Ctrl + N</span>
+                            <span class="shortcut-desc">新建笔记</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Ctrl + Shift + Delete</span>
+                            <span class="shortcut-desc">删除当前笔记</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Ctrl + ↑</span>
+                            <span class="shortcut-desc">上一条笔记</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Ctrl + ↓</span>
+                            <span class="shortcut-desc">下一条笔记</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Ctrl + /</span>
+                            <span class="shortcut-desc">显示/隐藏快捷键参考</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Esc</span>
+                            <span class="shortcut-desc">关闭对话框</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="shortcuts-section">
+                    <h4>文本格式</h4>
+                    <div class="shortcuts-list">
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Ctrl + B</span>
+                            <span class="shortcut-desc">加粗</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-key">Ctrl + I</span>
+                            <span class="shortcut-desc">斜体</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
