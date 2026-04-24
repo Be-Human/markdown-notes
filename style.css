@@ -72,9 +72,11 @@ body {
 
 /* 无结果提示样式 */
 .no-results {
+    flex: 1;
     padding: 24px 16px;
     text-align: center;
     color: #808080;
+    display: none;
 }
 
 .no-results p {

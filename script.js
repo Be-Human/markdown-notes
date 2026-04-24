@@ -541,8 +541,9 @@ class MarkdownNotesApp {
 
     // 显示/隐藏无结果提示
     showNoResults(show) {
-        if (this.noResults) {
+        if (this.noResults && this.notesList) {
             this.noResults.style.display = show ? 'block' : 'none';
+            this.notesList.style.display = show ? 'none' : 'block';
         }
     }
 
