@@ -112,8 +112,8 @@ class MarkdownNotesApp {
 
         // 键盘快捷键
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                // 格式快捷键
+            // 格式快捷键（Ctrl+B, Ctrl+I）
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
                 if (e.key === 'b' || e.key === 'B') {
                     e.preventDefault();
                     this.handleFormatAction('bold');
@@ -121,26 +121,32 @@ class MarkdownNotesApp {
                     e.preventDefault();
                     this.handleFormatAction('italic');
                 }
-                // 新建笔记
-                else if (e.key === 'n' || e.key === 'N') {
+            }
+            
+            // 新建笔记（Alt+N）
+            if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                if (e.key === 'n' || e.key === 'N') {
                     e.preventDefault();
                     this.createNewNote();
                 }
-                // 删除当前笔记
-                else if (e.key === 'Delete' || e.key === 'Backspace') {
-                    if (e.shiftKey) {
-                        e.preventDefault();
-                        this.deleteNote(this.currentNoteId);
-                    }
-                }
-                // 快捷键参考
-                else if (e.key === '/' || e.key === '?') {
+            }
+            
+            // 删除当前笔记（Ctrl+Shift+D）
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
+                if (e.key === 'd' || e.key === 'D') {
                     e.preventDefault();
-                    this.toggleShortcutsDialog();
+                    this.deleteNote(this.currentNoteId);
                 }
             }
-            // 笔记切换快捷键（支持 Ctrl+上/下箭头）
-            if (e.ctrlKey || e.metaKey) {
+            
+            // 快捷键参考（Ctrl+Shift+? 或 Ctrl+?）
+            if ((e.ctrlKey || e.metaKey) && (e.key === '/' || e.key === '?')) {
+                e.preventDefault();
+                this.toggleShortcutsDialog();
+            }
+            
+            // 笔记切换快捷键（Alt+上/下箭头）- 不会在编辑器中误触
+            if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     this.navigateToPreviousNote();
@@ -570,7 +576,7 @@ class MarkdownNotesApp {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'note-delete-btn';
             deleteBtn.textContent = '×';
-            deleteBtn.title = '删除笔记 (Ctrl+Shift+Delete)';
+            deleteBtn.title = '删除笔记 (Ctrl+Shift+D)';
             
             noteItem.addEventListener('click', (e) => {
                 if (e.target !== deleteBtn) {
