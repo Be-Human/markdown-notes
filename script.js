@@ -14,6 +14,11 @@ class MarkdownNotesApp {
         // 格式工具栏按钮
         this.formatButtons = document.querySelectorAll('.format-btn');
         
+        // 快捷键参考相关元素
+        this.keyboardShortcutsBtn = document.getElementById('keyboard-shortcuts-btn');
+        this.shortcutsDialogOverlay = document.getElementById('shortcuts-dialog-overlay');
+        this.shortcutsDialogClose = document.getElementById('shortcuts-dialog-close');
+        
         // 确认对话框相关元素
         this.confirmDialogOverlay = document.getElementById('confirm-dialog-overlay');
         this.confirmDialogTitle = document.getElementById('confirm-dialog-title');
@@ -75,15 +80,73 @@ class MarkdownNotesApp {
             });
         });
 
+        // 快捷键参考按钮事件
+        if (this.keyboardShortcutsBtn) {
+            this.keyboardShortcutsBtn.addEventListener('click', () => {
+                this.showShortcutsDialog();
+            });
+        }
+
+        // 快捷键参考对话框关闭按钮
+        if (this.shortcutsDialogClose) {
+            this.shortcutsDialogClose.addEventListener('click', () => {
+                this.hideShortcutsDialog();
+            });
+        }
+
+        // 点击遮罩层关闭快捷键参考对话框
+        if (this.shortcutsDialogOverlay) {
+            this.shortcutsDialogOverlay.addEventListener('click', (e) => {
+                if (e.target === this.shortcutsDialogOverlay) {
+                    this.hideShortcutsDialog();
+                }
+            });
+        }
+
+        // ESC 键关闭快捷键参考对话框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.shortcutsDialogOverlay && this.shortcutsDialogOverlay.classList.contains('active')) {
+                this.hideShortcutsDialog();
+            }
+        });
+
         // 键盘快捷键
-        this.editor.addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', (e) => {
             if (e.ctrlKey || e.metaKey) {
+                // 格式快捷键
                 if (e.key === 'b' || e.key === 'B') {
                     e.preventDefault();
                     this.handleFormatAction('bold');
                 } else if (e.key === 'i' || e.key === 'I') {
                     e.preventDefault();
                     this.handleFormatAction('italic');
+                }
+                // 新建笔记
+                else if (e.key === 'n' || e.key === 'N') {
+                    e.preventDefault();
+                    this.createNewNote();
+                }
+                // 删除当前笔记
+                else if (e.key === 'Delete' || e.key === 'Backspace') {
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        this.deleteNote(this.currentNoteId);
+                    }
+                }
+                // 快捷键参考
+                else if (e.key === '/' || e.key === '?') {
+                    e.preventDefault();
+                    this.toggleShortcutsDialog();
+                }
+            }
+            // 笔记切换快捷键（支持 Ctrl+上/下箭头）
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.navigateToPreviousNote();
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.navigateToNextNote();
                 }
             }
         });
@@ -507,7 +570,7 @@ class MarkdownNotesApp {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'note-delete-btn';
             deleteBtn.textContent = '×';
-            deleteBtn.title = '删除笔记';
+            deleteBtn.title = '删除笔记 (Ctrl+Shift+Delete)';
             
             noteItem.addEventListener('click', (e) => {
                 if (e.target !== deleteBtn) {
@@ -663,6 +726,47 @@ class MarkdownNotesApp {
                 }
             }
         });
+    }
+
+    // 导航到上一条笔记
+    navigateToPreviousNote() {
+        const filteredNotes = this.getFilteredNotes();
+        if (filteredNotes.length <= 1) return;
+        
+        const currentIndex = filteredNotes.findIndex(n => n.id === this.currentNoteId);
+        if (currentIndex > 0) {
+            this.loadNote(filteredNotes[currentIndex - 1].id);
+        }
+    }
+
+    // 导航到下一条笔记
+    navigateToNextNote() {
+        const filteredNotes = this.getFilteredNotes();
+        if (filteredNotes.length <= 1) return;
+        
+        const currentIndex = filteredNotes.findIndex(n => n.id === this.currentNoteId);
+        if (currentIndex < filteredNotes.length - 1) {
+            this.loadNote(filteredNotes[currentIndex + 1].id);
+        }
+    }
+
+    // 显示快捷键参考对话框
+    showShortcutsDialog() {
+        this.shortcutsDialogOverlay.classList.add('active');
+    }
+
+    // 隐藏快捷键参考对话框
+    hideShortcutsDialog() {
+        this.shortcutsDialogOverlay.classList.remove('active');
+    }
+
+    // 切换快捷键参考对话框显示状态
+    toggleShortcutsDialog() {
+        if (this.shortcutsDialogOverlay.classList.contains('active')) {
+            this.hideShortcutsDialog();
+        } else {
+            this.showShortcutsDialog();
+        }
     }
 }
 
