@@ -34,6 +34,28 @@ class MarkdownNotesApp {
         
         this.confirmCallback = null;
         
+        // 系统检测 - 用于快捷键显示
+        this.isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        
+        // 按键名称映射 - 根据系统显示不同的按键名称
+        this.keyNames = {
+            ctrl: this.isMac ? '⌘' : 'Ctrl',
+            shift: this.isMac ? '⇧' : 'Shift',
+            alt: this.isMac ? '⌥' : 'Alt',
+            meta: this.isMac ? '⌘' : 'Win',
+            control: this.isMac ? '⌘' : 'Ctrl',
+            cmd: this.isMac ? '⌘' : 'Ctrl',
+            n: 'N',
+            d: 'D',
+            b: 'B',
+            i: 'I',
+            '?': '?',
+            '/': '/',
+            arrowUp: this.isMac ? '↑' : '↑',
+            arrowDown: this.isMac ? '↓' : '↓',
+            esc: 'Esc'
+        };
+        
         this.init();
     }
 
@@ -43,6 +65,9 @@ class MarkdownNotesApp {
         this.bindEvents();
         this.renderNotesList();
         
+        // 更新快捷键显示（根据系统显示不同的按键名称）
+        this.updateShortcutsDisplay();
+        
         // 如果没有笔记，创建一个新笔记
         if (this.notes.length === 0) {
             this.createNewNote();
@@ -50,6 +75,71 @@ class MarkdownNotesApp {
             // 否则加载第一个笔记
             this.loadNote(this.notes[0].id);
         }
+    }
+
+    // 获取按键显示名称
+    getKeyDisplay(key) {
+        return this.keyNames[key.toLowerCase()] || key;
+    }
+
+    // 生成快捷键显示文本
+    getShortcutDisplay(keys) {
+        const displayKeys = keys.map(key => this.getKeyDisplay(key));
+        return displayKeys.join(this.isMac ? '' : ' + ');
+    }
+
+    // 更新快捷键显示
+    updateShortcutsDisplay() {
+        // 更新新建笔记按钮的 title
+        if (this.newNoteBtn) {
+            const shortcut = this.getShortcutDisplay(['Ctrl', 'Shift', 'N']);
+            this.newNoteBtn.title = `新建笔记 (${shortcut})`;
+        }
+        
+        // 更新快捷键参考按钮的 title
+        if (this.keyboardShortcutsBtn) {
+            const shortcut = this.getShortcutDisplay(['Ctrl', '?']);
+            this.keyboardShortcutsBtn.title = `键盘快捷键 (${shortcut})`;
+        }
+        
+        // 动态更新快捷键参考对话框中的内容
+        this.updateShortcutsDialog();
+    }
+
+    // 更新快捷键参考对话框
+    updateShortcutsDialog() {
+        const shortcuts = [
+            { keys: ['Ctrl', 'Shift', 'N'], desc: '新建笔记' },
+            { keys: ['Ctrl', 'Shift', 'D'], desc: '删除当前笔记' },
+            { keys: ['Ctrl', 'Shift', 'ArrowUp'], desc: '上一条笔记' },
+            { keys: ['Ctrl', 'Shift', 'ArrowDown'], desc: '下一条笔记' },
+            { keys: ['Ctrl', '?'], desc: '显示/隐藏快捷键参考' },
+            { keys: ['Esc'], desc: '关闭对话框' },
+            { keys: ['Ctrl', 'B'], desc: '加粗' },
+            { keys: ['Ctrl', 'I'], desc: '斜体' }
+        ];
+        
+        // 获取所有快捷键项
+        const shortcutItems = document.querySelectorAll('.shortcut-item');
+        if (shortcutItems.length === 0) return;
+        
+        // 更新每个快捷键项
+        shortcuts.forEach((shortcut, index) => {
+            if (index < shortcutItems.length) {
+                const keyElement = shortcutItems[index].querySelector('.shortcut-key');
+                if (keyElement) {
+                    let displayText;
+                    if (shortcut.keys.includes('ArrowUp')) {
+                        displayText = this.getShortcutDisplay(['Ctrl', 'Shift']) + (this.isMac ? '↑' : ' + ↑');
+                    } else if (shortcut.keys.includes('ArrowDown')) {
+                        displayText = this.getShortcutDisplay(['Ctrl', 'Shift']) + (this.isMac ? '↓' : ' + ↓');
+                    } else {
+                        displayText = this.getShortcutDisplay(shortcut.keys);
+                    }
+                    keyElement.textContent = displayText;
+                }
+            }
+        });
     }
 
     // 绑定事件
@@ -110,7 +200,10 @@ class MarkdownNotesApp {
             }
         });
 
-        // 键盘快捷键
+        // 键盘快捷键 - 跨平台兼容设计
+        // Windows/Linux: Ctrl = 主修饰键
+        // macOS: Cmd (Meta) = 主修饰键
+        // 使用 (e.ctrlKey || e.metaKey) 同时支持两种系统
         document.addEventListener('keydown', (e) => {
             // 格式快捷键（Ctrl+B, Ctrl+I）
             if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
@@ -123,15 +216,19 @@ class MarkdownNotesApp {
                 }
             }
             
-            // 新建笔记（Alt+N）
-            if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            // 新建笔记（Ctrl+Shift+N）- 跨平台兼容
+            // Windows/Linux: Ctrl+Shift+N
+            // macOS: Cmd+Shift+N
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
                 if (e.key === 'n' || e.key === 'N') {
                     e.preventDefault();
                     this.createNewNote();
                 }
             }
             
-            // 删除当前笔记（Ctrl+Shift+D）
+            // 删除当前笔记（Ctrl+Shift+D）- 跨平台兼容
+            // Windows/Linux: Ctrl+Shift+D
+            // macOS: Cmd+Shift+D
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
                 if (e.key === 'd' || e.key === 'D') {
                     e.preventDefault();
@@ -139,14 +236,19 @@ class MarkdownNotesApp {
                 }
             }
             
-            // 快捷键参考（Ctrl+Shift+? 或 Ctrl+?）
+            // 快捷键参考（Ctrl+? 或 Ctrl+/）- 跨平台兼容
+            // Windows/Linux: Ctrl+? 或 Ctrl+/
+            // macOS: Cmd+? 或 Cmd+/
             if ((e.ctrlKey || e.metaKey) && (e.key === '/' || e.key === '?')) {
                 e.preventDefault();
                 this.toggleShortcutsDialog();
             }
             
-            // 笔记切换快捷键（Alt+上/下箭头）- 不会在编辑器中误触
-            if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            // 笔记切换快捷键（Ctrl+Shift+↑/↓）- 跨平台兼容
+            // Windows/Linux: Ctrl+Shift+↑/↓
+            // macOS: Cmd+Shift+↑/↓
+            // 使用 Ctrl+Shift 组合避免在编辑器中误触光标移动
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     this.navigateToPreviousNote();
