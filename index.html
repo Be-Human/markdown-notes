@@ -19,8 +19,26 @@
                     </button>
                 </div>
             </div>
+            <div class="sort-container">
+                <label class="sort-label">排序：</label>
+                <select id="sort-select" class="sort-select">
+                    <option value="updatedAt">修改时间</option>
+                    <option value="createdAt">创建时间</option>
+                    <option value="title">标题</option>
+                </select>
+                <button id="sort-order-btn" class="sort-order-btn" title="切换排序方向">
+                    <span class="icon">↓</span>
+                </button>
+            </div>
             <div class="search-container">
                 <input type="text" id="search-input" class="search-input" placeholder="搜索笔记...">
+            </div>
+            <div class="tags-filter-container">
+                <div class="tags-filter-label">标签筛选：</div>
+                <div id="tags-filter-list" class="tags-filter-list"></div>
+                <button id="clear-tags-filter-btn" class="clear-tags-filter-btn" style="display: none;" title="清除标签筛选">
+                    <span class="icon">×</span>
+                </button>
             </div>
             <div class="notes-list" id="notes-list"></div>
             <div class="no-results" id="no-results" style="display: none;">
@@ -34,6 +52,14 @@
             <div class="editor-container">
                 <div class="editor-header">
                     <h2>编辑</h2>
+                    <button id="exit-focus-mode-btn" class="exit-focus-mode-btn" style="display: none;" title="退出专注模式 (F11)">
+                        <span class="icon">⤢</span>
+                    </button>
+                </div>
+                <div class="tags-input-container">
+                    <div class="tags-label">标签：</div>
+                    <div id="current-tags" class="current-tags"></div>
+                    <input type="text" id="tag-input" class="tag-input" placeholder="输入标签后按 Enter 添加...">
                 </div>
                 <div class="format-toolbar">
                     <button class="format-btn" data-action="bold" title="加粗 (Ctrl+B)">
@@ -71,6 +97,9 @@
                     </button>
                     <button class="format-btn" id="theme-toggle-btn" title="切换主题 (深色/浅色)">
                         <span class="icon">🌙</span>
+                    </button>
+                    <button class="format-btn" id="focus-mode-btn" title="专注模式 (F11)">
+                        <span class="icon">✍️</span>
                     </button>
                 </div>
                 <textarea id="editor" placeholder="开始输入 Markdown 内容..."></textarea>
