@@ -34,6 +34,17 @@ class MarkdownNotesApp {
         
         this.confirmCallback = null;
         
+        // 主题相关
+        this.themeToggleBtn = document.getElementById('theme-toggle-btn');
+        this.isLightTheme = false;
+        
+        // 统计相关
+        this.charCountElement = document.getElementById('char-count');
+        this.wordCountElement = document.getElementById('word-count');
+        
+        // 导出按钮
+        this.exportBtn = document.getElementById('export-btn');
+        
         // 系统检测 - 用于快捷键显示
         this.isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         
@@ -61,9 +72,11 @@ class MarkdownNotesApp {
 
     // 初始化应用
     init() {
+        this.loadTheme();
         this.loadNotes();
         this.bindEvents();
         this.renderNotesList();
+        this.updateStats();
         
         // 更新快捷键显示（根据系统显示不同的按键名称）
         this.updateShortcutsDisplay();
@@ -148,7 +161,22 @@ class MarkdownNotesApp {
         this.editor.addEventListener('input', () => {
             this.updateCurrentNote();
             this.renderPreview();
+            this.updateStats();
         });
+        
+        // 导出按钮事件
+        if (this.exportBtn) {
+            this.exportBtn.addEventListener('click', () => {
+                this.exportNote();
+            });
+        }
+        
+        // 主题切换按钮事件
+        if (this.themeToggleBtn) {
+            this.themeToggleBtn.addEventListener('click', () => {
+                this.toggleTheme();
+            });
+        }
 
         // 新建笔记按钮
         this.newNoteBtn.addEventListener('click', () => {
@@ -793,8 +821,97 @@ class MarkdownNotesApp {
             this.currentNoteId = noteId;
             this.editor.value = note.content;
             this.renderPreview();
+            this.updateStats();
             this.renderNotesList();
         }
+    }
+
+    // 更新字符数和字数统计
+    updateStats() {
+        const content = this.editor.value || '';
+        const charCount = content.length;
+        
+        // 计算字数：对于中文，每个汉字算一个字；对于英文，按空格分隔计算单词
+        const chineseChars = content.match(/[\u4e00-\u9fa5]/g) || [];
+        const englishWords = content.split(/\s+/).filter(word => word.length > 0 && !/[\u4e00-\u9fa5]/.test(word));
+        const wordCount = chineseChars.length + englishWords.length;
+        
+        if (this.charCountElement) {
+            this.charCountElement.textContent = `字符数: ${charCount}`;
+        }
+        if (this.wordCountElement) {
+            this.wordCountElement.textContent = `字数: ${wordCount}`;
+        }
+    }
+
+    // 导出当前笔记为 .md 文件
+    exportNote() {
+        if (!this.currentNoteId) {
+            this.showAlertDialog('提示', '没有可导出的笔记！');
+            return;
+        }
+        
+        const note = this.notes.find(n => n.id === this.currentNoteId);
+        if (!note) return;
+        
+        // 获取笔记标题作为文件名
+        let fileName = this.getNoteTitle(note.content);
+        // 移除文件名中不允许的字符
+        fileName = fileName.replace(/[<>:"/\\|?*]/g, '_');
+        // 如果文件名为空或过长，使用默认名称
+        if (!fileName || fileName.trim() === '' || fileName.length > 50) {
+            fileName = '笔记';
+        }
+        fileName += '.md';
+        
+        // 创建 Blob 对象
+        const blob = new Blob([note.content], { type: 'text/markdown;charset=utf-8' });
+        
+        // 创建下载链接
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // 切换主题
+    toggleTheme() {
+        this.isLightTheme = !this.isLightTheme;
+        this.applyTheme();
+        this.saveTheme();
+    }
+
+    // 应用主题
+    applyTheme() {
+        if (this.isLightTheme) {
+            document.body.classList.add('light-theme');
+            if (this.themeToggleBtn) {
+                this.themeToggleBtn.querySelector('.icon').textContent = '☀️';
+                this.themeToggleBtn.title = '切换到深色主题';
+            }
+        } else {
+            document.body.classList.remove('light-theme');
+            if (this.themeToggleBtn) {
+                this.themeToggleBtn.querySelector('.icon').textContent = '🌙';
+                this.themeToggleBtn.title = '切换到浅色主题';
+            }
+        }
+    }
+
+    // 保存主题设置到 localStorage
+    saveTheme() {
+        localStorage.setItem('markdownNotesTheme', this.isLightTheme ? 'light' : 'dark');
+    }
+
+    // 从 localStorage 加载主题设置
+    loadTheme() {
+        const savedTheme = localStorage.getItem('markdownNotesTheme');
+        this.isLightTheme = savedTheme === 'light';
+        this.applyTheme();
     }
 
     // 更新当前笔记
