@@ -65,8 +65,19 @@
                     <button class="format-btn" data-action="quote" title="引用">
                         <span class="icon">"</span>
                     </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="format-btn" id="export-btn" title="导出为 Markdown 文件">
+                        <span class="icon">导出</span>
+                    </button>
+                    <button class="format-btn" id="theme-toggle-btn" title="切换主题 (深色/浅色)">
+                        <span class="icon">🌙</span>
+                    </button>
                 </div>
                 <textarea id="editor" placeholder="开始输入 Markdown 内容..."></textarea>
+                <div class="editor-footer">
+                    <span id="char-count" class="stat-item">字符数: 0</span>
+                    <span id="word-count" class="stat-item">字数: 0</span>
+                </div>
             </div>
             
             <!-- 预览区 -->
