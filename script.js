@@ -856,6 +856,24 @@ class MarkdownNotesApp {
         filteredNotes.sort((a, b) => {
             let comparison = 0;
             
+            // 检查是否是空白笔记（内容为空或只有空格）
+            const isEmptyA = !a.content || a.content.trim() === '';
+            const isEmptyB = !b.content || b.content.trim() === '';
+            
+            // 空白笔记特殊处理：始终排在最前面
+            if (isEmptyA && !isEmptyB) {
+                return -1; // a 是空白，排在前面
+            }
+            if (!isEmptyA && isEmptyB) {
+                return 1; // b 是空白，排在前面
+            }
+            // 如果都是空白笔记，按修改时间排序（新的在前）
+            if (isEmptyA && isEmptyB) {
+                comparison = new Date(a.updatedAt) - new Date(b.updatedAt);
+                // 空白笔记始终按修改时间降序排列（新的在前）
+                return -comparison;
+            }
+            
             switch (this.sortBy) {
                 case 'title':
                     const titleA = this.getNoteTitle(a.content).toLowerCase();
