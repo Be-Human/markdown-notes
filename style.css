@@ -1026,3 +1026,403 @@ body.light-theme .shortcut-desc {
         align-items: flex-start;
     }
 }
+
+/* ========== 排序控件样式 ========== */
+.sort-container {
+    padding: 12px 16px;
+    border-bottom: 1px solid #3c3c3c;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sort-label {
+    font-size: 0.85rem;
+    color: #808080;
+    white-space: nowrap;
+}
+
+.sort-select {
+    flex: 1;
+    padding: 6px 10px;
+    background-color: #3c3c3c;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    color: #d4d4d4;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.sort-select:focus {
+    border-color: #007acc;
+}
+
+.sort-order-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0;
+    background-color: #3c3c3c;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    color: #d4d4d4;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+}
+
+.sort-order-btn:hover {
+    background-color: #007acc;
+    color: #ffffff;
+}
+
+.sort-order-btn .icon {
+    font-weight: 600;
+}
+
+/* ========== 标签筛选容器样式 ========== */
+.tags-filter-container {
+    padding: 12px 16px;
+    border-bottom: 1px solid #3c3c3c;
+}
+
+.tags-filter-label {
+    font-size: 0.85rem;
+    color: #808080;
+    margin-bottom: 8px;
+}
+
+.tags-filter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.filter-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: #3c3c3c;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #d4d4d4;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.filter-tag:hover {
+    background-color: #4e4e4e;
+}
+
+.filter-tag.active {
+    background-color: #007acc;
+    color: #ffffff;
+}
+
+.clear-tags-filter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    color: #f14c4c;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 4px;
+    opacity: 0.8;
+    transition: opacity 0.15s ease;
+}
+
+.clear-tags-filter-btn:hover {
+    opacity: 1;
+}
+
+/* ========== 笔记列表中的标签样式 ========== */
+.note-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.note-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background-color: #094771;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    color: #4ec9b0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.note-item:hover .note-tag {
+    background-color: #007acc;
+    color: #ffffff;
+}
+
+.note-tag:hover {
+    background-color: #007acc !important;
+    color: #ffffff !important;
+}
+
+/* ========== 标签输入区域样式 ========== */
+.tags-input-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 16px;
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #3c3c3c;
+}
+
+.tags-label {
+    font-size: 0.85rem;
+    color: #808080;
+    white-space: nowrap;
+}
+
+.current-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background-color: #094771;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.tag-text {
+    color: #4ec9b0;
+}
+
+.tag-remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    color: #f14c4c;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.tag-remove-btn:hover {
+    opacity: 1;
+}
+
+.tag-input {
+    flex: 1;
+    min-width: 120px;
+    padding: 6px 10px;
+    background-color: #1e1e1e;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    color: #d4d4d4;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.tag-input:focus {
+    border-color: #007acc;
+}
+
+.tag-input::placeholder {
+    color: #6a6a6a;
+}
+
+/* ========== 专注模式样式 ========== */
+.app-container.focus-mode .sidebar {
+    display: none;
+}
+
+.app-container.focus-mode .main-content {
+    width: 100%;
+}
+
+.app-container.focus-mode .editor-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.app-container.focus-mode .preview-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.exit-focus-mode-btn {
+    display: none;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    padding: 10px 16px;
+    background-color: #007acc;
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease;
+}
+
+.exit-focus-mode-btn:hover {
+    background-color: #005a9e;
+}
+
+.exit-focus-mode-btn .icon {
+    margin-right: 4px;
+}
+
+/* 专注模式下的编辑区域样式 */
+.app-container.focus-mode .editor-header {
+    position: relative;
+}
+
+/* ========== 编辑器头部样式扩展 ========== */
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ========== 浅色主题的对应样式 ========== */
+
+/* 排序控件浅色主题 */
+body.light-theme .sort-container {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+body.light-theme .sort-label {
+    color: #999999;
+}
+
+body.light-theme .sort-select {
+    background-color: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    color: #333333;
+}
+
+body.light-theme .sort-select:focus {
+    border-color: #007acc;
+}
+
+body.light-theme .sort-order-btn {
+    background-color: #e0e0e0;
+    border: 1px solid #e0e0e0;
+    color: #333333;
+}
+
+body.light-theme .sort-order-btn:hover {
+    background-color: #007acc;
+    color: #ffffff;
+}
+
+/* 标签筛选浅色主题 */
+body.light-theme .tags-filter-container {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+body.light-theme .tags-filter-label {
+    color: #999999;
+}
+
+body.light-theme .filter-tag {
+    background-color: #f0f0f0;
+    color: #333333;
+}
+
+body.light-theme .filter-tag:hover {
+    background-color: #e0e0e0;
+}
+
+body.light-theme .filter-tag.active {
+    background-color: #007acc;
+    color: #ffffff;
+}
+
+/* 笔记列表中的标签浅色主题 */
+body.light-theme .note-tag {
+    background-color: #d0e6ff;
+    color: #0066aa;
+}
+
+body.light-theme .note-item:hover .note-tag {
+    background-color: #007acc;
+    color: #ffffff;
+}
+
+/* 标签输入区域浅色主题 */
+body.light-theme .tags-input-container {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+body.light-theme .tags-label {
+    color: #999999;
+}
+
+body.light-theme .tag-item {
+    background-color: #d0e6ff;
+}
+
+body.light-theme .tag-text {
+    color: #0066aa;
+}
+
+body.light-theme .tag-input {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    color: #333333;
+}
+
+body.light-theme .tag-input:focus {
+    border-color: #007acc;
+}
+
+body.light-theme .tag-input::placeholder {
+    color: #999999;
+}
+
+/* ========== 响应式设计补充 ========== */
+@media (max-width: 768px) {
+    .sort-container {
+        flex-wrap: wrap;
+    }
+    
+    .tags-input-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .tag-input {
+        width: 100%;
+    }
+    
+    .exit-focus-mode-btn {
+        top: 8px;
+        right: 8px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}

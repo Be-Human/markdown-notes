@@ -11,6 +11,26 @@ class MarkdownNotesApp {
         this.searchInput = document.getElementById('search-input');
         this.noResults = document.getElementById('no-results');
         
+        // 排序相关
+        this.sortBy = 'updatedAt';
+        this.sortOrder = 'desc';
+        this.sortSelect = document.getElementById('sort-select');
+        this.sortOrderBtn = document.getElementById('sort-order-btn');
+        
+        // 专注模式相关
+        this.isFocusMode = false;
+        this.focusModeBtn = document.getElementById('focus-mode-btn');
+        this.exitFocusModeBtn = document.getElementById('exit-focus-mode-btn');
+        this.appContainer = document.querySelector('.app-container');
+        this.sidebar = document.querySelector('.sidebar');
+        
+        // 标签相关
+        this.currentTagFilter = null;
+        this.tagInput = document.getElementById('tag-input');
+        this.currentTagsElement = document.getElementById('current-tags');
+        this.tagsFilterList = document.getElementById('tags-filter-list');
+        this.clearTagsFilterBtn = document.getElementById('clear-tags-filter-btn');
+        
         // 格式工具栏按钮
         this.formatButtons = document.querySelectorAll('.format-btn');
         
@@ -73,9 +93,12 @@ class MarkdownNotesApp {
     // 初始化应用
     init() {
         this.loadTheme();
+        this.loadSortSettings();
+        this.loadFocusModeSettings();
         this.loadNotes();
         this.bindEvents();
         this.renderNotesList();
+        this.renderTagsFilter();
         this.updateStats();
         
         // 更新快捷键显示（根据系统显示不同的按键名称）
@@ -189,6 +212,56 @@ class MarkdownNotesApp {
             this.renderNotesList();
         });
 
+        // 排序相关事件
+        if (this.sortSelect) {
+            this.sortSelect.addEventListener('change', () => {
+                this.sortBy = this.sortSelect.value;
+                this.saveSortSettings();
+                this.renderNotesList();
+            });
+        }
+        
+        if (this.sortOrderBtn) {
+            this.sortOrderBtn.addEventListener('click', () => {
+                this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc';
+                this.updateSortOrderButton();
+                this.saveSortSettings();
+                this.renderNotesList();
+            });
+        }
+
+        // 专注模式相关事件
+        if (this.focusModeBtn) {
+            this.focusModeBtn.addEventListener('click', () => {
+                this.toggleFocusMode();
+            });
+        }
+        
+        if (this.exitFocusModeBtn) {
+            this.exitFocusModeBtn.addEventListener('click', () => {
+                this.toggleFocusMode();
+            });
+        }
+
+        // 标签相关事件
+        if (this.tagInput) {
+            this.tagInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.addTag();
+                }
+            });
+        }
+
+        // 清除标签筛选按钮事件
+        if (this.clearTagsFilterBtn) {
+            this.clearTagsFilterBtn.addEventListener('click', () => {
+                this.currentTagFilter = null;
+                this.renderNotesList();
+                this.renderTagsFilter();
+            });
+        }
+
         // 格式工具栏按钮事件
         this.formatButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -284,6 +357,12 @@ class MarkdownNotesApp {
                     e.preventDefault();
                     this.navigateToNextNote();
                 }
+            }
+            
+            // 专注模式切换（F11）
+            if (e.key === 'F11') {
+                e.preventDefault();
+                this.toggleFocusMode();
             }
         });
 
@@ -622,6 +701,13 @@ class MarkdownNotesApp {
         const savedNotes = localStorage.getItem('markdownNotes');
         if (savedNotes) {
             this.notes = JSON.parse(savedNotes);
+            
+            // 兼容旧数据：为没有 tags 字段的笔记添加空数组
+            this.notes.forEach(note => {
+                if (!note.tags) {
+                    note.tags = [];
+                }
+            });
         }
     }
 
@@ -704,6 +790,26 @@ class MarkdownNotesApp {
                 noteInfo.appendChild(noteSummary);
             }
             
+            // 添加标签显示
+            if (note.tags && note.tags.length > 0) {
+                const noteTags = document.createElement('div');
+                noteTags.className = 'note-tags';
+                
+                note.tags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    tagElement.className = 'note-tag';
+                    tagElement.textContent = tag;
+                    tagElement.title = `点击筛选标签: ${tag}`;
+                    tagElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.filterByTag(tag);
+                    });
+                    noteTags.appendChild(tagElement);
+                });
+                
+                noteInfo.appendChild(noteTags);
+            }
+            
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'note-delete-btn';
             deleteBtn.textContent = '×';
@@ -726,17 +832,52 @@ class MarkdownNotesApp {
         });
     }
 
-    // 获取过滤后的笔记列表
+    // 获取过滤和排序后的笔记列表
     getFilteredNotes() {
-        if (!this.searchKeyword) {
-            return this.notes;
+        let filteredNotes = [...this.notes];
+        
+        // 标签筛选
+        if (this.currentTagFilter) {
+            filteredNotes = filteredNotes.filter(note => 
+                note.tags && note.tags.includes(this.currentTagFilter)
+            );
         }
         
-        return this.notes.filter(note => {
-            const title = this.getNoteTitle(note.content).toLowerCase();
-            const content = note.content.toLowerCase();
-            return title.includes(this.searchKeyword) || content.includes(this.searchKeyword);
+        // 搜索关键词筛选
+        if (this.searchKeyword) {
+            filteredNotes = filteredNotes.filter(note => {
+                const title = this.getNoteTitle(note.content).toLowerCase();
+                const content = note.content.toLowerCase();
+                return title.includes(this.searchKeyword) || content.includes(this.searchKeyword);
+            });
+        }
+        
+        // 排序
+        filteredNotes.sort((a, b) => {
+            let comparison = 0;
+            
+            switch (this.sortBy) {
+                case 'title':
+                    const titleA = this.getNoteTitle(a.content).toLowerCase();
+                    const titleB = this.getNoteTitle(b.content).toLowerCase();
+                    comparison = titleA.localeCompare(titleB, 'zh-CN');
+                    break;
+                    
+                case 'createdAt':
+                    comparison = new Date(a.createdAt) - new Date(b.createdAt);
+                    break;
+                    
+                case 'updatedAt':
+                default:
+                    comparison = new Date(a.updatedAt) - new Date(b.updatedAt);
+                    break;
+            }
+            
+            // 如果是降序，取反
+            return this.sortOrder === 'desc' ? -comparison : comparison;
         });
+        
+        return filteredNotes;
     }
 
     // 显示/隐藏无结果提示
@@ -806,13 +947,15 @@ class MarkdownNotesApp {
             id: Date.now().toString(),
             content: '',
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            tags: []
         };
         
         this.notes.unshift(newNote);
         this.saveNotes();
         this.loadNote(newNote.id);
         this.renderNotesList();
+        this.renderTagsFilter();
     }
 
     // 加载笔记
@@ -823,6 +966,7 @@ class MarkdownNotesApp {
             this.editor.value = note.content;
             this.renderPreview();
             this.updateStats();
+            this.renderCurrentTags();
             this.renderNotesList();
         }
     }
@@ -941,8 +1085,22 @@ class MarkdownNotesApp {
         this.showConfirmDialog('删除笔记', '确定要删除这个笔记吗？', () => {
             const noteIndex = this.notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
+                const deletedNote = this.notes[noteIndex];
                 this.notes.splice(noteIndex, 1);
                 this.saveNotes();
+                
+                // 如果当前筛选的标签只在被删除的笔记中存在，清除筛选
+                if (this.currentTagFilter && deletedNote.tags && deletedNote.tags.includes(this.currentTagFilter)) {
+                    const otherNotesHaveTag = this.notes.some(note => 
+                        note.tags && note.tags.includes(this.currentTagFilter)
+                    );
+                    if (!otherNotesHaveTag) {
+                        this.currentTagFilter = null;
+                    }
+                }
+                
+                // 重新渲染标签筛选器
+                this.renderTagsFilter();
                 
                 // 如果删除的是当前笔记，加载第一个笔记
                 if (noteId === this.currentNoteId) {
@@ -992,6 +1150,248 @@ class MarkdownNotesApp {
             this.hideShortcutsDialog();
         } else {
             this.showShortcutsDialog();
+        }
+    }
+
+    // ========== 排序相关方法 ==========
+
+    // 更新排序方向按钮显示
+    updateSortOrderButton() {
+        if (this.sortOrderBtn) {
+            const icon = this.sortOrderBtn.querySelector('.icon');
+            if (icon) {
+                icon.textContent = this.sortOrder === 'desc' ? '↓' : '↑';
+            }
+        }
+    }
+
+    // 保存排序设置
+    saveSortSettings() {
+        const settings = {
+            sortBy: this.sortBy,
+            sortOrder: this.sortOrder
+        };
+        localStorage.setItem('markdownNotesSortSettings', JSON.stringify(settings));
+    }
+
+    // 加载排序设置
+    loadSortSettings() {
+        const savedSettings = localStorage.getItem('markdownNotesSortSettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            this.sortBy = settings.sortBy || 'updatedAt';
+            this.sortOrder = settings.sortOrder || 'desc';
+            
+            // 更新下拉框选中值
+            if (this.sortSelect) {
+                this.sortSelect.value = this.sortBy;
+            }
+            
+            // 更新排序按钮显示
+            this.updateSortOrderButton();
+        }
+    }
+
+    // ========== 专注模式相关方法 ==========
+
+    // 切换专注模式
+    toggleFocusMode() {
+        this.isFocusMode = !this.isFocusMode;
+        this.applyFocusMode();
+        this.saveFocusModeSettings();
+    }
+
+    // 应用专注模式
+    applyFocusMode() {
+        if (this.appContainer) {
+            if (this.isFocusMode) {
+                this.appContainer.classList.add('focus-mode');
+            } else {
+                this.appContainer.classList.remove('focus-mode');
+            }
+        }
+
+        if (this.sidebar) {
+            this.sidebar.style.display = this.isFocusMode ? 'none' : 'flex';
+        }
+
+        if (this.exitFocusModeBtn) {
+            this.exitFocusModeBtn.style.display = this.isFocusMode ? 'block' : 'none';
+        }
+
+        if (this.focusModeBtn) {
+            const icon = this.focusModeBtn.querySelector('.icon');
+            if (icon) {
+                icon.textContent = this.isFocusMode ? '⤢' : '✍️';
+            }
+            this.focusModeBtn.title = this.isFocusMode ? '退出专注模式 (F11)' : '专注模式 (F11)';
+        }
+    }
+
+    // 保存专注模式设置
+    saveFocusModeSettings() {
+        localStorage.setItem('markdownNotesFocusMode', this.isFocusMode ? 'true' : 'false');
+    }
+
+    // 加载专注模式设置
+    loadFocusModeSettings() {
+        const saved = localStorage.getItem('markdownNotesFocusMode');
+        if (saved === 'true') {
+            this.isFocusMode = true;
+            this.applyFocusMode();
+        }
+    }
+
+    // ========== 标签相关方法 ==========
+
+    // 添加标签到当前笔记
+    addTag() {
+        if (!this.tagInput || !this.currentNoteId) return;
+
+        const tagText = this.tagInput.value.trim();
+        if (!tagText) return;
+
+        // 检查标签是否只包含空格
+        if (tagText === '') return;
+
+        // 检查标签是否已存在
+        const noteIndex = this.notes.findIndex(n => n.id === this.currentNoteId);
+        if (noteIndex === -1) return;
+
+        const note = this.notes[noteIndex];
+        
+        // 确保 tags 数组存在
+        if (!note.tags) {
+            note.tags = [];
+        }
+
+        // 检查标签是否已存在（不区分大小写）
+        if (note.tags.some(t => t.toLowerCase() === tagText.toLowerCase())) {
+            this.tagInput.value = '';
+            return;
+        }
+
+        // 添加标签
+        note.tags.push(tagText);
+        this.notes[noteIndex].updatedAt = new Date().toISOString();
+        this.saveNotes();
+        
+        // 清空输入框
+        this.tagInput.value = '';
+        
+        // 重新渲染
+        this.renderCurrentTags();
+        this.renderNotesList();
+        this.renderTagsFilter();
+    }
+
+    // 从当前笔记删除标签
+    removeTag(tagText) {
+        if (!this.currentNoteId) return;
+
+        const noteIndex = this.notes.findIndex(n => n.id === this.currentNoteId);
+        if (noteIndex === -1) return;
+
+        const note = this.notes[noteIndex];
+        if (!note.tags) return;
+
+        // 删除标签
+        note.tags = note.tags.filter(t => t !== tagText);
+        this.notes[noteIndex].updatedAt = new Date().toISOString();
+        this.saveNotes();
+
+        // 重新渲染
+        this.renderCurrentTags();
+        this.renderNotesList();
+        this.renderTagsFilter();
+    }
+
+    // 按标签筛选
+    filterByTag(tagText) {
+        this.currentTagFilter = tagText;
+        this.renderNotesList();
+        this.renderTagsFilter();
+    }
+
+    // 渲染当前笔记的标签
+    renderCurrentTags() {
+        if (!this.currentTagsElement || !this.currentNoteId) return;
+
+        const note = this.notes.find(n => n.id === this.currentNoteId);
+        if (!note || !note.tags || note.tags.length === 0) {
+            this.currentTagsElement.innerHTML = '';
+            return;
+        }
+
+        this.currentTagsElement.innerHTML = '';
+        note.tags.forEach(tag => {
+            const tagElement = document.createElement('span');
+            tagElement.className = 'tag-item';
+            tagElement.innerHTML = `
+                <span class="tag-text">${this.escapeHtml(tag)}</span>
+                <button class="tag-remove-btn" title="删除标签">×</button>
+            `;
+            
+            const removeBtn = tagElement.querySelector('.tag-remove-btn');
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeTag(tag);
+            });
+            
+            this.currentTagsElement.appendChild(tagElement);
+        });
+    }
+
+    // 获取所有唯一标签
+    getAllTags() {
+        const allTags = new Set();
+        this.notes.forEach(note => {
+            if (note.tags) {
+                note.tags.forEach(tag => allTags.add(tag));
+            }
+        });
+        return Array.from(allTags).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+    }
+
+    // 渲染标签筛选器
+    renderTagsFilter() {
+        if (!this.tagsFilterList) return;
+
+        const allTags = this.getAllTags();
+        
+        if (allTags.length === 0) {
+            this.tagsFilterList.innerHTML = '';
+            if (this.clearTagsFilterBtn) {
+                this.clearTagsFilterBtn.style.display = 'none';
+            }
+            return;
+        }
+
+        this.tagsFilterList.innerHTML = '';
+        
+        allTags.forEach(tag => {
+            const tagElement = document.createElement('span');
+            tagElement.className = `filter-tag${this.currentTagFilter === tag ? ' active' : ''}`;
+            tagElement.textContent = tag;
+            tagElement.title = `点击筛选标签: ${tag}`;
+            
+            tagElement.addEventListener('click', () => {
+                if (this.currentTagFilter === tag) {
+                    // 如果已经选中，则取消筛选
+                    this.currentTagFilter = null;
+                } else {
+                    this.currentTagFilter = tag;
+                }
+                this.renderNotesList();
+                this.renderTagsFilter();
+            });
+            
+            this.tagsFilterList.appendChild(tagElement);
+        });
+
+        // 显示/隐藏清除筛选按钮
+        if (this.clearTagsFilterBtn) {
+            this.clearTagsFilterBtn.style.display = this.currentTagFilter ? 'block' : 'none';
         }
     }
 }
