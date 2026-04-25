@@ -413,6 +413,7 @@ class MarkdownNotesApp {
             editor.focus();
             this.updateCurrentNote();
             this.renderPreview();
+            this.updateStats();
         }
     }
 
